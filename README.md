@@ -1,2 +1,5 @@
 # Realm-of-The-Elderlings-Map
-A personal mapping project of Robin Hobbs RoTE
+
+**Project** A cartographic companion to Robin Hobb's *Realm of the Elderlings* novels
+**Platform** iPhone, via Scriptable
+**Author** Personal project. No commercial intent, no client, no deadline beyond my own patience.
