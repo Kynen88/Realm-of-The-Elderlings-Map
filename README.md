@@ -159,6 +159,11 @@ drawing-context interface as the map.
   Hobb map plates and correcting it by hand: drag points, draw new
   coastline, plant woods, name places and rivers, and export the result as
   `atlas-geo.json`, which is what `Atlas.js` draws from.
+- **`atlas-geo.json`** — the geography itself, as the tracer last exported
+  it. It is the source the other two are regenerated from: `Atlas.js`
+  carries it as its `PLATE`/`COASTS`/`WOODS`/… constants, and the tracer
+  carries it as the `GEO0` it starts a fresh session from. All three are
+  updated together, so a copy is never quietly older than the map.
 
 There's no build step and no dependencies — both files run as-is.
 
@@ -235,21 +240,28 @@ shortcut — is under the **?** sheet in the tracer itself.
 Each phase is required to open on the phone at the end of it — nothing
 ships half-runnable.
 
-## Current status (as of 30 August 2026)
+## Current status (as of 1 September 2026)
 
 **Delivered:** the drawn, lettered sheet — six named materials (paper,
 ground, canopy, sea, wave/shore/rock, ink/water), four levels of detail
-plus a fifth "never drawn" (searchable-only) tier, 102 named things placed
-with zero label overlaps across every zoom bucket on three phone sizes. The
+plus a fifth "never drawn" (searchable-only) tier, 135 named things placed
+with zero label overlaps at any of the thirteen zoom buckets. The
 underlying control geometry currently carries 60 coast outlines (5,616
-control points), 23 rivers, 517 trees, 11 relief regions and 44
+control points), 24 rivers, 5 lakes, 1,341 trees, 15 relief regions and 63
 settlements, all traced from the published plates.
 
 **Not yet in the world:** the Out Islands and Pirate Isles have no
-coastline yet (structural, not a naming gap); Clerres is absent entirely; a
-handful of Six Duchies settlements (Hook, Besham, Antler, Watch, Egg, Rook)
-need hand-authoring; the west coast below the Rain Wilds is an honest
-placeholder closure, not a traced shore, because no plate charts it.
+coastline yet (structural, not a naming gap — the Out Islands do now at
+least carry their region name); Clerres is absent entirely; a handful of Six Duchies settlements
+(Hook, Besham, Antler, Watch, Egg, Rook) need hand-authoring; the west
+coast below the Rain Wilds is an honest placeholder closure, not a traced
+shore, because no plate charts it.
+
+**Still unread on the plates:** ten of the thirteen tower symbols are
+carried unnamed, six rivers are traced but unnamed, one lake is unnamed,
+and three separate reaches all answer to "Sanger River", so the name is
+lettered on each. All of it is visible in the tracer's **Still to do**
+panel, which is where it gets fixed.
 
 **Not yet built:** roads, borders and sea lanes are specified but undrawn.
 Nothing is tappable yet — articles, the gazetteer and the reading position
