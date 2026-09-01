@@ -1730,13 +1730,18 @@ function makeAtlas(GEO) {
 //  you last saw it is the whole point of a map.
 // ============================================================================
 
-// The brief says the political layer goes on the settlements' rings and the
-// region names — and there it stops. It had leaked into the settlement names
-// too, so a ducal seat was set bold AND in its realm's colour AND a point and a
-// half larger than a town: three signals for one distinction, which is how a map
-// starts to shout. A seat is now told by weight and by the filled ring beneath
-// it; the name itself is black like every other name, and the colour on the
-// sheet means one thing only.
+// The political layer is the settlements' rings, and there it stops. It had
+// leaked into the settlement names first — a ducal seat set bold AND in its
+// realm's colour AND a point and a half larger than a town: three signals for
+// one distinction, which is how a map starts to shout — and it stayed on the
+// region names after that, which is where it was finally doing no work at all.
+// Six region names on the world view, in six unrelated hues, with nothing to
+// compare them against and no legend to read them by: colour saying what
+// position had already said, and reading as decoration because of it. Region
+// names are set in the secondary ink now, a step back from a settlement's, so
+// they carry the ground rather than compete with the places on it. Nine inks
+// still answer "whose is this?" — on the rings, quietly, for a reader who
+// thinks to ask.
 //
 // The sizes span 9.6 to 12.6 — under a third of an octave — because hierarchy
 // here is carried by weight, by ink and above all by whether a name appears at
@@ -1761,7 +1766,7 @@ const TYPE = {
   seat:    { px: 13.6, weight: '600', style: '',        ink: 'ink',    track: 0.05, halo: 3.6, pri: 10 },
   town:    { px: 11.9, weight: '400', style: '',        ink: 'ink',    track: 0.02, halo: 3.2, pri: 40 },
   village: { px: 10.8, weight: '400', style: '',        ink: 'ink2',   track: 0.02, halo: 3.0, pri: 60 },
-  region:  { px: 12.4, weight: '500', style: '',        ink: 'realm',  track: 0.13, halo: 3.4, pri: 20, caps: true },
+  region:  { px: 12.4, weight: '500', style: '',        ink: 'ink2',   track: 0.13, halo: 3.4, pri: 20, caps: true },
   water:   { px: 11.9, weight: '400', style: 'italic ', ink: 'water',  track: 0.08, halo: 3.2, pri: 30 },
   isle:    { px: 11.0, weight: '400', style: '',        ink: 'ink2',   track: 0.06, halo: 3.0, pri: 50 },
   river:   { px: 10.4, weight: '400', style: 'italic ', ink: 'water',  track: 0.10, halo: 3.0, pri: 70 }

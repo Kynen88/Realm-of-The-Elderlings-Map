@@ -73,9 +73,12 @@ water.
 reserved accent** — a red oxide (`#a33c26`), held for selection, personal
 marks and journey routes only. No territory is ever tinted (fills would
 spill into the sea and muddy the paper); instead each of the nine realms
-gets its own ink, applied only to settlement rings and region names — the
-*only* thing answering "whose is this?" A settlement's name is never
-coloured — a seat is told by weight and a filled ring beneath it. The nine
+gets its own ink, applied to settlement rings and nothing else — the
+*only* thing answering "whose is this?" No name is coloured for its realm:
+a seat is told by weight and a filled ring beneath it, and a region name is
+set in the secondary ink, a step back from a settlement's, so it carries
+the ground rather than competing with the places on it. Colour on the sheet
+answers one question, quietly, for a reader who thinks to ask it. The nine
 inks are solved for contrast (4.6:1–7.2:1 against paper) and spaced at
 least 22 Lab units apart, rather than chosen by eye. Land and sea are
 likewise separated by luminance, not just hue, so the coastline still reads
@@ -84,9 +87,14 @@ in poor light.
 **Typography:** two voices, strictly separated — Baskerville for content
 (labels, articles, notes), system sans for chrome (tabs, buttons, scale
 bar). Settlement names roman, water names italic in water ink, region names
-small-capped in realm colour, river names set *along* the river with each
-letter turned to the line's direction. Sizes span 10.4–13.6 points — under
-a third of an octave. Labels carry a soft halo the colour of the ground
+small-capped in the secondary ink, river names set *along* the river with
+each letter turned to the line's direction. Sizes span 10.4–13.6 points —
+under a third of an octave. Tracking is a property of the type and lives in
+the type spec: a region name is set at 0.13 em and a water name at 0.08,
+close enough that the word still reads as a word. Which letters are small
+caps is decided by where they fall in the name, never by how the name
+happens to be stored, so two names on one view are never set in two
+different styles. Labels carry a soft halo the colour of the ground
 beneath them, never a box.
 
 **Symbols:** the three tree species are one family — shared baseline, bole,
