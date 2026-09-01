@@ -124,7 +124,9 @@ collapses to zero under `prefers-reduced-motion`.
 - **Journeys** — half a dozen curated routes through the books, stepped
   waypoint by waypoint with prose.
 - **Layers** — independent toggles for settlements, names, borders, relief,
-  woodland, rivers, roads, sea lanes, conjectural links.
+  woodland, rivers, roads, sea lanes, conjectural links. Under them, each
+  thing already gates itself twice by scale: when its mark is drawn, and
+  when its name is set.
 - **Reading position** — set once (per book, 16 steps), then invisible —
   gates the map, gazetteer, journeys and cross-references so nothing spoils
   ahead of where the reader has read.
@@ -255,10 +257,14 @@ ground, canopy, sea, wave/shore/rock, ink/water), four levels of detail
 plus a fifth "never drawn" (searchable-only) tier, 126 named things placed
 with zero label overlaps at any of the thirteen zoom buckets — and the
 level gates now hold most of them back, so the world view carries the six
-realm names and nothing else. A lake is drawn wherever its own gate says,
-but its name waits for the closer views: the water is geography, the word
-is not. The underlying control geometry currently
-carries 60 coast outlines (5,616 control points), 24 rivers, 5 lakes,
+realm names and nothing else. Every thing with both a mark and a name
+carries two of those gates rather than one — *shown at* for the ring, the
+gable, the water, the line of the river, and *named at* for the word — so a
+town can stand on the regional sheet and wait until you are closer to say
+what it is called, and a lake can be there from the world view with its
+name held back. The atlas never letters a thing it is not drawing, so the
+second gate is held inside the first. The underlying control geometry
+currently carries 60 coast outlines (5,616 control points), 24 rivers, 5 lakes,
 1,620 trees, 15 relief regions and 63 settlements, all traced from the
 published plates.
 

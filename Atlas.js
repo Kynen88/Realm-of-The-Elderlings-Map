@@ -108,41 +108,76 @@ const REALMS = {
 
 const LEVELS_BY_KIND = { seat:[0,3], town:[1,3], village:[2,3], tower:[2,3] };
 
+// Two gates, not one.
+//
+// levels says at which scales the thing itself is drawn: a settlement's ring, a
+// tower's gable, the water of a lake, the line of a river. nameLevels says at
+// which scales it is lettered. They were one gate, and one gate forces a false
+// choice on everything that has both a mark and a name. A town wanted on the
+// regional sheet brought its name onto that sheet whether or not there was room
+// for the word, and the only way to quiet the word was to take the town off the
+// sheet with it. An engraver does neither: he draws the symbol wherever the
+// place matters and letters it where the paper allows.
+//
+// The rule between the two is that a name is never set where its own thing is
+// not drawn, so the name gate is narrowed to the mark's. A word over ground with
+// no mark under it is a worse fault than an unnamed town, and a thing held back
+// to the harbour view cannot be lettered on the world plate however its name
+// gate reads. Where the two do not overlap at all the answer is the fifth level:
+// drawn, never named.
+//
+// Saying nothing about naming leaves everything as it was. A feature with no
+// nameLevels of its own is lettered exactly where it is drawn.
+const NEVER_SHOWN = 4;
+function nameGate(f, mark, dflt) {
+  const M = mark || [0, 3];
+  const N = (f && f.nameLevels) || dflt || M;
+  if (M[0] >= NEVER_SHOWN || N[0] >= NEVER_SHOWN) return [NEVER_SHOWN, NEVER_SHOWN];
+  const lo = Math.max(N[0], M[0]), hi = Math.min(N[1], M[1]);
+  return lo > hi ? [NEVER_SHOWN, NEVER_SHOWN] : [lo, hi];
+}
+// The one floor the atlas sets for itself rather than reading it out of the
+// geography: a lake that says nothing about naming still waits for the scale at
+// which a lake is worth naming. It lives here, beside the gate it feeds, so that
+// the tracer's panel can offer the reader the same default the sheet will use.
+const LAKE_NAMED_FROM = 2;
+
 // A place with no name is a symbol the plate draws and I have not yet read.
 // It is carried through so it can be named in the tracer rather than lost.
-const SETTLEMENTS = PLACES.filter(p => p.name && p.kind !== 'tower').map(p => ({
-  id: p.id, name: p.name, at: p.at, realm: p.realm || 'sixDuchies',
-  kind: p.kind, conjectural: !!p.conjectural, firstBook: p.firstBook || null,
-  levels: p.levels || LEVELS_BY_KIND[p.kind] || [1, 2]
-}));
+const SETTLEMENTS = PLACES.filter(p => p.name && p.kind !== 'tower').map(p => {
+  const levels = p.levels || LEVELS_BY_KIND[p.kind] || [1, 2];
+  return { id: p.id, name: p.name, at: p.at, realm: p.realm || 'sixDuchies',
+           kind: p.kind, conjectural: !!p.conjectural, firstBook: p.firstBook || null,
+           levels: levels, nameLevels: nameGate(p, levels) };
+});
 
 // The plate's own legend carries a tower symbol, and the towers along the Buck
 // and Bearns coast are drawn there whether or not the plate troubles to name
 // them — the same standing as a tree or a peak. They are a symbol, not a name,
 // so an unnamed one is still honest to draw.
-const TOWERS = PLACES.filter(p => p.kind === 'tower').map(p => ({
-  id: p.id, name: p.name || '', at: p.at, realm: p.realm || 'sixDuchies',
-  levels: p.levels || LEVELS_BY_KIND.tower
-}));
+const TOWERS = PLACES.filter(p => p.kind === 'tower').map(p => {
+  const levels = p.levels || LEVELS_BY_KIND.tower;
+  return { id: p.id, name: p.name || '', at: p.at, realm: p.realm || 'sixDuchies',
+           levels: levels, nameLevels: nameGate(p, levels) };
+});
 
 // A named lake gets its name from the lake itself; nothing is typed twice.
 //
-// The water and the word are not gated together, though. A lake is drawn
-// wherever its own gate says — it is geography, and a hundred-mile lake belongs
-// on the world plate whether or not there is room to letter it — but the name
-// waits until the sheet is close enough for a lake to be worth naming. Gating
-// them as one put four lake names across the middle of the Six Duchies at the
-// world view, on a plate that names no settlement at all: a hierarchy the wrong
-// way up. A lake never drawn that close simply goes unlettered, which is honest.
-const LAKE_NAMED_FROM = 2;
+// A lake was the first thing to want the two gates. It is geography, and a
+// hundred-mile lake belongs on the world plate whether or not there is room to
+// letter it; gating water and word as one put four lake names across the middle
+// of the Six Duchies at the world view, on a plate that names no settlement at
+// all — a hierarchy the wrong way up. So a lake that says nothing about naming
+// waits for the scale at which a lake is worth naming, and one never drawn that
+// close simply goes unlettered, which is honest. A lake that does say — one that
+// carries its own nameLevels — is taken at its word.
 const LAKENAMES = (typeof LAKES !== 'undefined' ? LAKES : []).filter(l => l.name && l.pts && l.pts.length > 2)
   .map(l => {
     let x = 0, y = 0;
     for (const q of l.pts) { x += q[0]; y += q[1]; }
-    const L = l.levels || [LAKE_NAMED_FROM, 3];
     return { id: l.id + '-name', name: l.name, type: 'water',
              at: [x / l.pts.length, y / l.pts.length],
-             levels: [Math.max(LAKE_NAMED_FROM, L[0]), L[1]],
+             levels: nameGate(l, l.levels || [0, 3], [LAKE_NAMED_FROM, 3]),
              size: 0.84, track: 0.08 };
   });
 
@@ -192,9 +227,14 @@ function straightestAlong(pts) {
   return best;
 }
 
+// A river has carried two gates all along, without a name for the idea: the
+// great rivers are drawn on the world plate and lettered only from the regional
+// view in, because a name laid along a river needs a length of river to lie
+// along. That default stands, and a river with its own nameLevels overrides it.
 const RIVERNAMES = RIVERS.filter(r => r.name && r.pts.length > 2).map(r => ({
   id: r.id + '-name', river: r.id, name: r.name,
-  levels: r.levels || (r.rank === 0 ? [1,3] : [2,3]),
+  levels: nameGate(r, r.levels || [r.rank === undefined ? 1 : r.rank, 3],
+                   r.levels || (r.rank === 0 ? [1,3] : [2,3])),
   t: straightestAlong(r.pts)
 }));
 // ============================================================================
@@ -845,12 +885,12 @@ function makeAtlas(GEO) {
   // fifth answer, [4,4] — never drawn: held in the atlas so search and the
   // reading panel can reach it, lettered on the sheet at no scale at all. The
   // drawing never reaches level 4, so the same comparison covers it, but it is
-  // said out loud here because it is a decision and not an accident.
-  const NEVER_DRAWN = 4;
+  // named rather than written as a number — NEVER_SHOWN, up beside the gates it
+  // belongs to — because it is a decision and not an accident.
   function atLevel(f, level) {
     const L = f && f.levels;
     if (!L) return true;
-    if (L[0] >= NEVER_DRAWN) return false;
+    if (L[0] >= NEVER_SHOWN) return false;
     return level >= L[0] && level <= L[1];
   }
 
@@ -1919,12 +1959,15 @@ function makeLabeller(GEO, PLACES, help) {
   function candidatesAt(level) {
     const out = [];
     // [4,4] is "never drawn": kept in the atlas, lettered at no scale.
-    const inLevel = L => !!L && L[0] < 4 && level >= L[0] && level <= L[1];
+    const inLevel = L => !!L && L[0] < NEVER_SHOWN && level >= L[0] && level <= L[1];
 
-    for (const s of SETTLEMENTS) if (inLevel(s.levels))
+    // The mark and the word ask different gates. A settlement's ring is drawn on
+    // its levels and is an obstacle here whether or not it is lettered; the name
+    // asks nameLevels, which is the same range unless the geography says closer.
+    for (const s of SETTLEMENTS) if (inLevel(s.nameLevels))
       out.push({ id:s.id, text:s.name, kind:s.kind === 'seat' ? 'seat' : (s.kind === 'village' ? 'village' : 'town'),
                  at:s.at, realm:s.realm, glyph:true });
-    for (const t of (PLACES.TOWERS || [])) if (t.name && inLevel(t.levels))
+    for (const t of (PLACES.TOWERS || [])) if (t.name && inLevel(t.nameLevels))
       out.push({ id:t.id, text:t.name, kind:'village', at:t.at, realm:t.realm, glyph:true });
     for (const r of REGIONS) if (inLevel(r.levels))
       out.push({ id:r.id, text:(level === 0 && r.short) ? r.short : r.name, kind:'region',
