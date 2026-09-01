@@ -1761,8 +1761,8 @@ const TYPE = {
   seat:    { px: 13.6, weight: '600', style: '',        ink: 'ink',    track: 0.05, halo: 3.6, pri: 10 },
   town:    { px: 11.9, weight: '400', style: '',        ink: 'ink',    track: 0.02, halo: 3.2, pri: 40 },
   village: { px: 10.8, weight: '400', style: '',        ink: 'ink2',   track: 0.02, halo: 3.0, pri: 60 },
-  region:  { px: 12.4, weight: '500', style: '',        ink: 'realm',  track: 0.30, halo: 3.4, pri: 20, caps: true },
-  water:   { px: 11.9, weight: '400', style: 'italic ', ink: 'water',  track: 0.16, halo: 3.2, pri: 30 },
+  region:  { px: 12.4, weight: '500', style: '',        ink: 'realm',  track: 0.13, halo: 3.4, pri: 20, caps: true },
+  water:   { px: 11.9, weight: '400', style: 'italic ', ink: 'water',  track: 0.08, halo: 3.2, pri: 30 },
   isle:    { px: 11.0, weight: '400', style: '',        ink: 'ink2',   track: 0.06, halo: 3.0, pri: 50 },
   river:   { px: 10.4, weight: '400', style: 'italic ', ink: 'water',  track: 0.10, halo: 3.0, pri: 70 }
 };
@@ -1792,9 +1792,18 @@ function makeLabeller(GEO, PLACES, help) {
   // not setting them at all.
   function runs(text, t, scale) {
     const caps = t.caps, out = [];
+    // Which letters are small is a property of the name, not of how it happens
+    // to have been typed. Reading it off the source case meant a name stored in
+    // capitals — the world plate's short forms are — came out in full capitals
+    // while every other region name came out cap-and-small-cap, so the six names
+    // on one view were set in two different styles. The initial of each word is
+    // the cap and the rest of the word is small; the stored case is ignored.
+    let wordStart = true;
     for (let i = 0; i < text.length; i++) {
       const ch = text[i];
-      const small = caps && ch === ch.toLowerCase() && ch !== ch.toUpperCase();
+      const letter = ch.toLowerCase() !== ch.toUpperCase();
+      const small = caps && letter && !wordStart;
+      wordStart = !letter;
       out.push({ ch: caps ? ch.toUpperCase() : ch, s: small ? 0.78 : 1 });
     }
     return out;
@@ -1914,7 +1923,7 @@ function makeLabeller(GEO, PLACES, help) {
       out.push({ id:t.id, text:t.name, kind:'village', at:t.at, realm:t.realm, glyph:true });
     for (const r of REGIONS) if (inLevel(r.levels))
       out.push({ id:r.id, text:(level === 0 && r.short) ? r.short : r.name, kind:'region',
-                 at:r.at, realm:r.realm, fixed:true, track:r.track, sizeMul:r.size || 1 });
+                 at:r.at, realm:r.realm, fixed:true, sizeMul:r.size || 1 });
     for (const w of WATERS) if (inLevel(w.levels) && !namesARiver(w))
       out.push({ id:w.id, text:w.name, kind:'water', at:w.at, realm:'none',
                  fixed:true, angle:w.angle || 0, sizeMul:w.size || 1 });
