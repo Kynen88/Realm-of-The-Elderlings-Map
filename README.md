@@ -244,24 +244,26 @@ ships half-runnable.
 
 **Delivered:** the drawn, lettered sheet — six named materials (paper,
 ground, canopy, sea, wave/shore/rock, ink/water), four levels of detail
-plus a fifth "never drawn" (searchable-only) tier, 135 named things placed
-with zero label overlaps at any of the thirteen zoom buckets. The
-underlying control geometry currently carries 60 coast outlines (5,616
-control points), 24 rivers, 5 lakes, 1,341 trees, 15 relief regions and 63
-settlements, all traced from the published plates.
+plus a fifth "never drawn" (searchable-only) tier, 126 named things placed
+with zero label overlaps at any of the thirteen zoom buckets — and the
+level gates now hold most of them back, so the world view carries the
+realm names and little else. The underlying control geometry currently
+carries 60 coast outlines (5,616 control points), 24 rivers, 5 lakes,
+1,620 trees, 15 relief regions and 63 settlements, all traced from the
+published plates.
 
 **Not yet in the world:** the Out Islands and Pirate Isles have no
 coastline yet (structural, not a naming gap — the Out Islands do now at
-least carry their region name); Clerres is absent entirely; a handful of Six Duchies settlements
-(Hook, Besham, Antler, Watch, Egg, Rook) need hand-authoring; the west
-coast below the Rain Wilds is an honest placeholder closure, not a traced
-shore, because no plate charts it.
+least carry their region name); Clerres is absent entirely; a handful of
+Six Duchies settlements (Hook, Besham, Antler, Watch, Egg, Rook) need
+hand-authoring; the west coast below the Rain Wilds is an honest
+placeholder closure, not a traced shore, because no plate charts it.
 
-**Still unread on the plates:** ten of the thirteen tower symbols are
-carried unnamed, six rivers are traced but unnamed, one lake is unnamed,
-and three separate reaches all answer to "Sanger River", so the name is
-lettered on each. All of it is visible in the tracer's **Still to do**
-panel, which is where it gets fixed.
+**Still unread on the plates:** nine of the sixty-three settlements are
+carried unnamed (six towers, two towns, a seat), six rivers are traced but
+unnamed, one lake is unnamed, and three separate reaches all answer to
+"Sanger River", so the name is lettered on each. All of it is visible in
+the tracer's **Still to do** panel, which is where it gets fixed.
 
 **Not yet built:** roads, borders and sea lanes are specified but undrawn.
 Nothing is tappable yet — articles, the gazetteer and the reading position
