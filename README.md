@@ -246,8 +246,10 @@ ships half-runnable.
 ground, canopy, sea, wave/shore/rock, ink/water), four levels of detail
 plus a fifth "never drawn" (searchable-only) tier, 126 named things placed
 with zero label overlaps at any of the thirteen zoom buckets — and the
-level gates now hold most of them back, so the world view carries the
-realm names and little else. The underlying control geometry currently
+level gates now hold most of them back, so the world view carries the six
+realm names and nothing else. A lake is drawn wherever its own gate says,
+but its name waits for the closer views: the water is geography, the word
+is not. The underlying control geometry currently
 carries 60 coast outlines (5,616 control points), 24 rivers, 5 lakes,
 1,620 trees, 15 relief regions and 63 settlements, all traced from the
 published plates.

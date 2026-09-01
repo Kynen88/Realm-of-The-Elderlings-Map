@@ -126,12 +126,23 @@ const TOWERS = PLACES.filter(p => p.kind === 'tower').map(p => ({
 }));
 
 // A named lake gets its name from the lake itself; nothing is typed twice.
+//
+// The water and the word are not gated together, though. A lake is drawn
+// wherever its own gate says — it is geography, and a hundred-mile lake belongs
+// on the world plate whether or not there is room to letter it — but the name
+// waits until the sheet is close enough for a lake to be worth naming. Gating
+// them as one put four lake names across the middle of the Six Duchies at the
+// world view, on a plate that names no settlement at all: a hierarchy the wrong
+// way up. A lake never drawn that close simply goes unlettered, which is honest.
+const LAKE_NAMED_FROM = 2;
 const LAKENAMES = (typeof LAKES !== 'undefined' ? LAKES : []).filter(l => l.name && l.pts && l.pts.length > 2)
   .map(l => {
     let x = 0, y = 0;
     for (const q of l.pts) { x += q[0]; y += q[1]; }
+    const L = l.levels || [LAKE_NAMED_FROM, 3];
     return { id: l.id + '-name', name: l.name, type: 'water',
-             at: [x / l.pts.length, y / l.pts.length], levels: l.levels || [2, 3],
+             at: [x / l.pts.length, y / l.pts.length],
+             levels: [Math.max(LAKE_NAMED_FROM, L[0]), L[1]],
              size: 0.84, track: 0.08 };
   });
 
