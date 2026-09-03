@@ -97,6 +97,22 @@ happens to be stored, so two names on one view are never set in two
 different styles. Labels carry a soft halo the colour of the ground
 beneath them, never a box.
 
+A name has two lengths, and room decides which one is set: *Buck R.* on the
+regional sheet, *Buck River* as the reader closes on it, worked out from the
+one name the geography holds rather than typed twice. The shorter form is
+also what a name falls back to when the fuller one will not fit — a river
+whose reach is too tight for the whole of its name is lettered short along
+the water rather than in full and straight beside it. What never gives is
+the type: sizes span under a third of an octave on purpose, so a name set
+smaller to make it fit would say something about the place that is not
+true. The word gives, not the type.
+
+A lake name is fitted to its own water — one line if the lake will take it,
+two if that is what it takes to stay inside, and out on the shore only when
+the lake is too small for its name at that scale. It is set at the point
+deepest inside the outline rather than at the centroid, which on a lake with
+a bay is out near the shore.
+
 **Symbols:** the three tree species are one family — shared baseline, bole,
 crown construction and proportion — not three unrelated drawings at the
 same size. Which species, whether it's scrub, and when it appears are all
@@ -262,9 +278,12 @@ carries two of those gates rather than one — *shown at* for the ring, the
 gable, the water, the line of the river, and *named at* for the word — so a
 town can stand on the regional sheet and wait until you are closer to say
 what it is called, and a lake can be there from the world view with its
-name held back. The atlas never letters a thing it is not drawing, so the
-second gate is held inside the first. The underlying control geometry
-currently carries 60 coast outlines (5,616 control points), 24 rivers, 5 lakes,
+name held back. Names are set at the length the room allows — the short
+form of a river or an isle on the view it first appears at, the whole of it
+as the reader closes in — and a lake name sits in its own water, on two
+lines where one will not fit. The atlas never letters a thing it is not
+drawing, so the second gate is held inside the first. The underlying control
+geometry currently carries 60 coast outlines (5,616 control points), 24 rivers, 5 lakes,
 1,620 trees, 15 relief regions and 63 settlements, all traced from the
 published plates.
 

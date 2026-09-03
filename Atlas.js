@@ -142,6 +142,98 @@ function nameGate(f, mark, dflt) {
 // the tracer's panel can offer the reader the same default the sheet will use.
 const LAKE_NAMED_FROM = 2;
 
+// A name has two lengths, and which one the sheet uses is a question of room.
+//
+// The plates letter a river "Buck R." where the country is crowded and
+// "Buck River" where it is not, and so should this: the short form on the view a
+// name first appears at, the whole of it as the reader closes in and the ground
+// opens up. Both are worked out from the one name the geography holds, so
+// nothing is typed twice and a name cannot drift from its own abbreviation.
+// Where the geography names a short form itself, that is used instead of the
+// worked-out one - a region whose full name is a mouthful can say what it would
+// rather be called.
+//
+// Shortening only, never expanding. "Claw Isle" and "Claw Island" are two
+// different places on these plates, nearly two thousand miles apart, and a rule
+// that turned one into the other would rename a place. The single expansion is
+// "R.", which on every plate here abbreviates River and nothing else, so a river
+// the tracer holds in short form can still be lettered in full where there is
+// room for it.
+const SHORTEN = [
+  [/\bIslands\b/g, 'Is.'], [/\bIsland\b/g, 'Is.'],
+  [/\bIsles\b/g,   'Is.'], [/\bIsle\b/g,   'Is.'],
+  [/\bRivers\b/g,  'Rs.'], [/\bRiver\b/g,  'R.']
+];
+function shortFormOf(name) {
+  let s = String(name || '');
+  for (const rule of SHORTEN) s = s.replace(rule[0], rule[1]);
+  return s;
+}
+function fullFormOf(name) {
+  return String(name || '').replace(/\bR\.(?=\s|$)/g, 'River');
+}
+
+// Where in a lake to letter its name.
+//
+// The centroid is the obvious answer and the wrong one. A lake with a bay or a
+// notch has its centroid out near a shore, or in the notch itself, and a name
+// set there pokes out of its own water at one corner while there is room to
+// spare elsewhere. The point wanted is the one deepest inside the outline - the
+// place in the water furthest from any shore - which is where a hand would
+// letter it and where the most name will fit before the lake runs out.
+//
+// Found by search rather than by formula, because a formula for this does not
+// exist: a coarse grid over the outline's box, keeping the best interior point,
+// then a few rounds of halving the step around it. Deterministic, a few thousand
+// distance tests, run once as the atlas loads and never again.
+function deepestIn(pts) {
+  if (!pts || pts.length < 3) return null;
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const q of pts) {
+    if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0];
+    if (q[1] < y0) y0 = q[1]; if (q[1] > y1) y1 = q[1];
+  }
+  const inside = function (x, y) {
+    let h = false;
+    for (let i = 0, n = pts.length, j = n - 1; i < n; j = i++) {
+      const a = pts[i], b = pts[j];
+      if ((a[1] > y) !== (b[1] > y) && x < (b[0]-a[0]) * (y-a[1]) / (b[1]-a[1]) + a[0]) h = !h;
+    }
+    return h;
+  };
+  // how far from the nearest shore, negative outside the water
+  const depth = function (x, y) {
+    let d = Infinity;
+    for (let i = 0, n = pts.length, j = n - 1; i < n; j = i++) {
+      const a = pts[i], b = pts[j];
+      const vx = b[0] - a[0], vy = b[1] - a[1], L2 = vx*vx + vy*vy;
+      let u = L2 > 0 ? ((x - a[0]) * vx + (y - a[1]) * vy) / L2 : 0;
+      u = u < 0 ? 0 : (u > 1 ? 1 : u);
+      const dx = x - (a[0] + vx * u), dy = y - (a[1] + vy * u);
+      const dd = Math.sqrt(dx*dx + dy*dy);
+      if (dd < d) d = dd;
+    }
+    return inside(x, y) ? d : -d;
+  };
+  let step = Math.max(x1 - x0, y1 - y0) / 16;
+  if (!(step > 0)) return null;
+  let best = null, bestD = -Infinity;
+  for (let x = x0 + step / 2; x < x1; x += step)
+    for (let y = y0 + step / 2; y < y1; y += step) {
+      const d = depth(x, y);
+      if (d > bestD) { bestD = d; best = [x, y]; }
+    }
+  if (!best) return null;
+  for (let k = 0; k < 6; k++) {
+    step /= 2;
+    for (const o of [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]]) {
+      const x = best[0] + o[0] * step, y = best[1] + o[1] * step, d = depth(x, y);
+      if (d > bestD) { bestD = d; best = [x, y]; }
+    }
+  }
+  return bestD > 0 ? [+best[0].toFixed(2), +best[1].toFixed(2)] : null;
+}
+
 // A place with no name is a symbol the plate draws and I have not yet read.
 // It is carried through so it can be named in the tracer rather than lost.
 const SETTLEMENTS = PLACES.filter(p => p.name && p.kind !== 'tower').map(p => {
@@ -175,10 +267,13 @@ const LAKENAMES = (typeof LAKES !== 'undefined' ? LAKES : []).filter(l => l.name
   .map(l => {
     let x = 0, y = 0;
     for (const q of l.pts) { x += q[0]; y += q[1]; }
+    // The outline travels with the name. A lake name is fitted to the water it
+    // names rather than dropped at the middle and hoped for, and the layout
+    // cannot ask whether a word is in the lake without the lake.
     return { id: l.id + '-name', name: l.name, type: 'water',
-             at: [x / l.pts.length, y / l.pts.length],
+             at: deepestIn(l.pts) || [x / l.pts.length, y / l.pts.length],
              levels: nameGate(l, l.levels || [0, 3], [LAKE_NAMED_FROM, 3]),
-             size: 0.84, track: 0.08 };
+             lake: l.pts, size: 0.84, track: 0.08 };
   });
 
 const REGIONS = LABELS.filter(l => l.type === 'region');
@@ -1961,27 +2056,74 @@ function makeLabeller(GEO, PLACES, help) {
     // [4,4] is "never drawn": kept in the atlas, lettered at no scale.
     const inLevel = L => !!L && L[0] < NEVER_SHOWN && level >= L[0] && level <= L[1];
 
+    // Which forms of a name to offer the layout, fullest first.
+    //
+    // The short form on the view a name first appears at, the whole of it from
+    // the next view in: "Buck R." on the regional sheet and "Buck River" as the
+    // reader closes on it. Room has the last word within that — the layout takes
+    // the first of these that will sit where the name belongs, so a river whose
+    // reach is too tight for the whole of its name is lettered short along the
+    // water rather than in full and straight beside it.
+    //
+    // This is the answer to fitting a name to the space it has, and it is the
+    // one this atlas can give. Setting the same word smaller to make it fit is
+    // the other answer, and it is closed to us: the type sizes here span under a
+    // third of an octave on purpose, and a name set at a size no other name on
+    // the sheet shares says something about the place that is not true. The word
+    // gives, not the type.
+    //
+    // The worked-out abbreviation is for a feature's own generic word — River,
+    // Island, Isle — and for nothing else. A realm is not a feature: the Pirate
+    // Isles is a country, and lettering it "Pirate Is." on the world plate would
+    // name an island group where the plate means to name a kingdom. So a region,
+    // a duchy seat and a town are shortened only where the geography says so
+    // itself, which it does by carrying a short of its own.
+    //
+    // A name with no shorter form — nearly all of them, and every settlement —
+    // comes back as a list of one and is unaffected by any of it.
+    const DERIVED = { water:true, isle:true, river:true };
+    const formsFor = (kind, o, name, gate) => {
+      const derive = !!DERIVED[kind];
+      const full = derive ? fullFormOf(name) : String(name || '');
+      const short = (o && o.short) ? String(o.short) : (derive ? shortFormOf(full) : full);
+      if (!short || short === full) return [full];
+      return (gate && level <= gate[0]) ? [short] : [full, short];
+    };
+
     // The mark and the word ask different gates. A settlement's ring is drawn on
     // its levels and is an obstacle here whether or not it is lettered; the name
     // asks nameLevels, which is the same range unless the geography says closer.
-    for (const s of SETTLEMENTS) if (inLevel(s.nameLevels))
-      out.push({ id:s.id, text:s.name, kind:s.kind === 'seat' ? 'seat' : (s.kind === 'village' ? 'village' : 'town'),
+    for (const s of SETTLEMENTS) if (inLevel(s.nameLevels)) {
+      const F = formsFor(s.kind, s, s.name, s.nameLevels);
+      out.push({ id:s.id, text:F[0], forms:F,
+                 kind:s.kind === 'seat' ? 'seat' : (s.kind === 'village' ? 'village' : 'town'),
                  at:s.at, realm:s.realm, glyph:true });
-    for (const t of (PLACES.TOWERS || [])) if (t.name && inLevel(t.nameLevels))
-      out.push({ id:t.id, text:t.name, kind:'village', at:t.at, realm:t.realm, glyph:true });
-    for (const r of REGIONS) if (inLevel(r.levels))
-      out.push({ id:r.id, text:(level === 0 && r.short) ? r.short : r.name, kind:'region',
+    }
+    for (const t of (PLACES.TOWERS || [])) if (t.name && inLevel(t.nameLevels)) {
+      const F = formsFor('village', t, t.name, t.nameLevels);
+      out.push({ id:t.id, text:F[0], forms:F, kind:'village', at:t.at, realm:t.realm, glyph:true });
+    }
+    for (const r of REGIONS) if (inLevel(r.levels)) {
+      const F = formsFor('region', r, r.name, r.levels);
+      out.push({ id:r.id, text:F[0], forms:F, kind:'region',
                  at:r.at, realm:r.realm, fixed:true, sizeMul:r.size || 1 });
-    for (const w of WATERS) if (inLevel(w.levels) && !namesARiver(w))
-      out.push({ id:w.id, text:w.name, kind:'water', at:w.at, realm:'none',
-                 fixed:true, angle:w.angle || 0, sizeMul:w.size || 1 });
-    for (const i of ISLES) if (inLevel(i.levels))
-      out.push({ id:i.id, text:i.name, kind:'isle', at:i.at, realm:i.realm, angle:i.angle || 0 });
+    }
+    for (const w of WATERS) if (inLevel(w.levels) && !namesARiver(w)) {
+      const F = formsFor('water', w, w.name, w.levels);
+      out.push({ id:w.id, text:F[0], forms:F, kind:'water', at:w.at, realm:'none',
+                 fixed:true, angle:w.angle || 0, sizeMul:w.size || 1, lake:w.lake || null });
+    }
+    for (const i of ISLES) if (inLevel(i.levels)) {
+      const F = formsFor('isle', i, i.name, i.levels);
+      out.push({ id:i.id, text:F[0], forms:F, kind:'isle', at:i.at, realm:i.realm,
+                 angle:i.angle || 0 });
+    }
     for (const r of RIVERNAMES) if (inLevel(r.levels)) {
       const f = GEO.RIVERS.find(x => x.id === r.river);
       if (!f) continue;
       const p = alongRiver(f.pts, r.t);
-      out.push({ id:r.id, text:r.name, kind:'river', at:[p.x, p.y], realm:'none',
+      const F = formsFor('river', r, r.name, r.levels);
+      out.push({ id:r.id, text:F[0], forms:F, kind:'river', at:[p.x, p.y], realm:'none',
                  fixed:true, angle:p.a, path:f.pts, t:r.t });
     }
         // On the world plate the realm's name is the plate's chief name and is
@@ -2061,6 +2203,42 @@ function makeLabeller(GEO, PLACES, help) {
     }
     return hit;
   }
+  // Is the whole word in the water? The corners, the edge midpoints and the
+  // middle of its box, all against the lake's own outline. Nine points is enough
+  // for a lake, which is a blob and not a maze, and cheap enough to ask of every
+  // form at every zoom bucket.
+  function boxInside(P, b) {
+    if (!P || P.length < 3) return false;
+    const xs = [b.x0, (b.x0 + b.x1) / 2, b.x1], ys = [b.y0, (b.y0 + b.y1) / 2, b.y1];
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++)
+      if (!ptIn(P, xs[i], ys[j])) return false;
+    return true;
+  }
+
+  // Half the lake's own extent, across (0) or down (1) — how far a name has to
+  // stand off the anchor to be clear of the water altogether.
+  function lakeReach(P, axis) {
+    let lo = 1e9, hi = -1e9;
+    for (const q of P) { if (q[axis] < lo) lo = q[axis]; if (q[axis] > hi) hi = q[axis]; }
+    return hi > lo ? (hi - lo) / 2 : 0;
+  }
+
+  // Broken at the space that leaves the two halves most nearly equal, so a name
+  // stacks as "Redden" over "Lake" rather than "Redden Lake" over nothing. A
+  // name of one word cannot be broken and is not: Turlake stays on its line and
+  // takes its chances with the width of the lake.
+  function splitTwo(text) {
+    const parts = String(text).split(/\s+/).filter(Boolean);
+    if (parts.length < 2) return null;
+    let best = null, bestCost = Infinity;
+    for (let k = 1; k < parts.length; k++) {
+      const a = parts.slice(0, k).join(' '), b = parts.slice(k).join(' ');
+      const cost = Math.abs(a.length - b.length);
+      if (cost < bestCost) { bestCost = cost; best = [a, b]; }
+    }
+    return best;
+  }
+
   function groundUnder(b) {
     let land = 0, wet = 0;
     if (help.onLand) {
@@ -2263,30 +2441,65 @@ function makeLabeller(GEO, PLACES, help) {
                    y0:t.at[1]-4.4*S, y1:t.at[1]+1.2*S });
     }
 
-    for (const c of candidatesAt(level)) {
-      const t = TYPE[c.kind];
-      const mul = (c.sizeMul || 1) * LEVEL_SIZE[level];
-      const tt = c.track !== undefined ? Object.assign({}, t, { track: c.track }) : t;
-      const wPx = widthOf(c.text, tt, mul), hPx = t.px * mul;
-      const w = wPx * S, h = hPx * S;
-      const pad = 2.0 * S;
-      let put = null;
+    // Three ways to seat a word, and each of them either finds a seat or does
+    // not. None of them reserves ground: a form that is tried and rejected must
+    // leave no mark on the sheet, so the caller adds a box only for the attempt
+    // that won.
 
-      // A river name follows its river if the river is long enough to carry it.
-      if (c.path) {
-        const lay = layAlong(c.path, c.t, c.text, tt, mul, S);
-        if (lay && !hit(lay.box, c.id)) {
-          boxes.push(lay.box);
-          placed.push({ id:c.id, text:c.text, kind:c.kind, at:c.at, realm:c.realm,
-                        dx:0, dy:0, angle:0, mul:mul, track:c.track, box:lay.box,
-                        wPx:wPx, hPx:hPx, curve:lay.glyphs,
-                        contested:groundUnder(lay.box).busy, onLand:true });
-          continue;
-        }
-        // no room along the line, or the line is too short: fall through and set
-        // it straight, which is what it did before and is better than nothing
+    // A river name follows its river if the river is long enough to carry it.
+    const seatAlong = (c, text, t, tt, mul, hPx, pad) => {
+      const lay = layAlong(c.path, c.t, text, tt, mul, S);
+      if (!lay || hit(lay.box, c.id)) return null;
+      return { box: lay.box,
+               item: { id:c.id, text:text, kind:c.kind, at:c.at, realm:c.realm,
+                       dx:0, dy:0, angle:0, mul:mul, track:c.track, box:lay.box,
+                       wPx:widthOf(text, tt, mul), hPx:hPx, curve:lay.glyphs,
+                       contested:groundUnder(lay.box).busy, onLand:true } };
+    };
+
+    // A lake name belongs in its lake. The water is the thing being named, and a
+    // word set beside it names the ground instead — so it is fitted to the water
+    // first: on one line if the lake will take it, broken into two if that is
+    // what it takes to stay inside, and set beside the lake only when the lake
+    // is too small to hold its own name at this scale. Which it will be at the
+    // wide views and not at the close ones, which is the point: a lake grows
+    // into its name as the reader comes down to it.
+    //
+    // The halo goes in with it. A word inside a lake lies on water, whatever the
+    // coastline says about that ground, so it takes the water's colour and reads
+    // as printed on the lake rather than on a scrap of paper laid over it.
+    const seatInLake = (c, text, t, tt, mul, hPx, pad) => {
+      const lead = hPx * 1.02;
+      for (const lines of [[text], splitTwo(text)]) {
+        if (!lines) continue;
+        const ws = lines.map(s => widthOf(s, tt, mul));
+        const wPx = Math.max.apply(null, ws);
+        const blockH = hPx + lead * (lines.length - 1);
+        // Two boxes, and they answer different questions. The padded one is
+        // what other names must keep clear of; the bare one is where the ink
+        // actually goes, and it is the ink that has to be in the water. Asking
+        // the lake about the padding as well put a name out on the shore for the
+        // sake of two pixels of nothing at one corner.
+        const b = { x0:c.at[0] - wPx*S/2 - pad, x1:c.at[0] + wPx*S/2 + pad,
+                    y0:c.at[1] - blockH*S/2 - pad, y1:c.at[1] + blockH*S/2 + pad };
+        const ink = { x0:c.at[0] - wPx*S/2, x1:c.at[0] + wPx*S/2,
+                      y0:c.at[1] - blockH*S/2, y1:c.at[1] + blockH*S/2 };
+        if (!boxInside(c.lake, ink) || hit(b, c.id)) continue;
+        const top = hPx * 0.34 - lead * (lines.length - 1) / 2;
+        return { box: b,
+                 item: { id:c.id, text:lines.join(' '), kind:c.kind, at:c.at,
+                         realm:c.realm, dx:-wPx/2, dy:top, angle:0, mul:mul,
+                         track:c.track, box:b, wPx:wPx, hPx:blockH,
+                         lines: lines.map((s, k) => ({ text:s, dx:-ws[k]/2, dy:top + k*lead })),
+                         contested:false, onLand:false } };
       }
+      return null;
+    };
 
+    const seatBeside = (c, text, t, tt, mul, hPx, pad) => {
+      const wPx = widthOf(text, tt, mul);
+      const w = wPx * S, h = hPx * S;
+      let put = null;
       if (c.fixed) {
         // regions, seas and river names sit where the geography puts them, but
         // may shift a little rather than vanish outright
@@ -2311,11 +2524,17 @@ function makeLabeller(GEO, PLACES, help) {
         // lies on land, and again accepting anything. The order is unchanged and
         // the collision rules are unchanged; the sea is simply the last resort
         // it should always have been.
-        const gap = (c.glyph ? 6.0 : 2.4);
+        // How far off its anchor a name stands. A settlement's name clears its
+        // ring; a lake's name, when the lake will not hold it, has to clear the
+        // whole of the water — and by different amounts across and down, or a
+        // long thin lake would fling its name half a county away to clear its
+        // own length.
+        const gapX = c.gapX !== undefined ? c.gapX : (c.glyph ? 6.0 : 2.4);
+        const gapY = c.gapY !== undefined ? c.gapY : (c.glyph ? 6.0 : 2.4);
         const tryRing = function (needLand, needQuiet) {
           for (const [ox, oy] of RING) {
-            const dx = ox === 0 ? -wPx/2 : (ox > 0 ? gap : -gap - wPx);
-            const dy = oy === 0 ? hPx*0.34 : (oy > 0 ? gap + hPx*0.86 : -gap);
+            const dx = ox === 0 ? -wPx/2 : (ox > 0 ? gapX : -gapX - wPx);
+            const dy = oy === 0 ? hPx*0.34 : (oy > 0 ? gapY + hPx*0.86 : -gapY);
             const b = { x0:c.at[0]+dx*S-pad, x1:c.at[0]+(dx+wPx)*S+pad,
                         y0:c.at[1]+(dy-hPx*0.82)*S-pad, y1:c.at[1]+dy*S+pad };
             if (hit(b, c.id)) continue;
@@ -2338,16 +2557,61 @@ function makeLabeller(GEO, PLACES, help) {
         // where nothing is happening instead.
         put = tryRing(true, true) || tryRing(true, false) || tryRing(false, false);
       }
-      if (!put) continue;                      // no room: the name is not shown
-      boxes.push(put.b);
+      if (!put) return null;
       // What is this word actually lying on? Sampled once, here, and cached with
       // the layout — never per frame.
       const gr = groundUnder(put.b);
-      const land = gr.land, wet = gr.wet;
-      placed.push({ id:c.id, text:c.text, kind:c.kind, at:c.at, realm:c.realm,
-                    dx:put.dx, dy:put.dy, angle:put.angle, mul:mul,
-                    track:c.track, box:put.b, wPx:wPx, hPx:hPx,
-                    contested: gr.busy, onLand: land >= wet });
+      return { box: put.b,
+               item: { id:c.id, text:text, kind:c.kind, at:c.at, realm:c.realm,
+                       dx:put.dx, dy:put.dy, angle:put.angle, mul:mul,
+                       track:c.track, box:put.b, wPx:wPx, hPx:hPx,
+                       contested: gr.busy, onLand: gr.land >= gr.wet } };
+    };
+
+    for (const c of candidatesAt(level)) {
+      const t = TYPE[c.kind];
+      const mul = (c.sizeMul || 1) * LEVEL_SIZE[level];
+      const tt = c.track !== undefined ? Object.assign({}, t, { track: c.track }) : t;
+      const hPx = t.px * mul;
+      const pad = 2.0 * S;
+
+      // The fullest form that finds a seat is the one the sheet sets — but WHERE
+      // a name sits outranks how much of it is spelled out. A name that follows
+      // its river beats a longer one set straight beside it, and a lake name
+      // inside its lake beats a longer one out on the shore. So the forms are
+      // walked once for each kind of seat, best kind of seat first.
+      const forms = (c.forms && c.forms.length) ? c.forms : [c.text];
+      let seat = null;
+      if (c.path)
+        for (const f of forms) { seat = seatAlong(c, f, t, tt, mul, hPx, pad); if (seat) break; }
+      if (!seat && c.lake)
+        for (const f of forms) { seat = seatInLake(c, f, t, tt, mul, hPx, pad); if (seat) break; }
+      // A lake too small to hold its own name is lettered CLEAR of the water,
+      // not across it: the same ring a settlement's name walks, stood off by the
+      // lake's own reach so the word sits on the shore rather than half in and
+      // half out of the water, which is the one placement a printed atlas never
+      // makes.
+      if (!seat && c.lake) {
+        const cc = Object.assign({}, c, { fixed:false, glyph:false,
+                                          gapX:lakeReach(c.lake, 0) / S + 2.4,
+                                          gapY:lakeReach(c.lake, 1) / S + 2.4 });
+        for (const f of forms) { seat = seatBeside(cc, f, t, tt, mul, hPx, pad); if (seat) break; }
+        // The ring's last pass takes anything, so the word can still come to
+        // rest on the water. Then it lies on water and its halo has to say so,
+        // whatever the coastline thinks of the ground underneath.
+        if (seat) {
+          const bb = seat.box;
+          if (ptIn(c.lake, (bb.x0 + bb.x1) / 2, (bb.y0 + bb.y1) / 2)) {
+            seat.item.onLand = false;
+            seat.item.contested = false;
+          }
+        }
+      }
+      if (!seat)
+        for (const f of forms) { seat = seatBeside(c, f, t, tt, mul, hPx, pad); if (seat) break; }
+      if (!seat) continue;                     // no room: the name is not shown
+      boxes.push(seat.box);
+      placed.push(seat.item);
     }
     const r = { level:level, zRep:zRep, items:placed, boxes:boxes };
     layouts.set(key, r);
@@ -2409,7 +2673,20 @@ function makeLabeller(GEO, PLACES, help) {
         wash(g, it, dx, dy);
         g.globalAlpha = 1;
       }
-      drawRuns(g, it.text, tw, mul, dx, dy, inkFor(t.ink, it.realm), haloFor(it), a);
+      // A lake name may have been broken to keep it inside its water. Where it
+      // was is settled at layout time, line by line, so drawing it is drawing
+      // what the layout decided and nothing more.
+      if (it.lines) {
+        // The slide is the whole word's, not each line's: whatever the settle
+        // has added to the block, every line of it moves by, so a lake name
+        // taking a new seat travels as one word rather than coming apart.
+        const sdx = dx - it.dx, sdy = dy - it.dy;
+        for (const ln of it.lines)
+          drawRuns(g, ln.text, tw, mul, ln.dx + sdx, ln.dy + sdy,
+                   inkFor(t.ink, it.realm), haloFor(it), a);
+      } else {
+        drawRuns(g, it.text, tw, mul, dx, dy, inkFor(t.ink, it.realm), haloFor(it), a);
+      }
       g.restore();
     }
     g.restore();
