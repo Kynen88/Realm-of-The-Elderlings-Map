@@ -84,6 +84,15 @@ least 22 Lab units apart, rather than chosen by eye. Land and sea are
 likewise separated by luminance, not just hue, so the coastline still reads
 in poor light.
 
+There is one more family of tones, and it is not a tint: **the grounds**. A
+desert, a fen, a glacier and a snowfield each get a tone of their own, laid on
+the paper inside the coastline. They are not colours in the palette's sense —
+each sits within a few units of luminance of the paper it covers, so dry country
+reads as dry ground and never as a duchy shaded in. The distinction that matters
+is that a ground says what the country is made of, which is geography; a tint
+would say who holds it, which is what the nine realm inks answer, on the
+settlement rings, and nowhere else.
+
 **Typography:** two voices, strictly separated — Baskerville for content
 (labels, articles, notes), system sans for chrome (tabs, buttons, scale
 bar). Settlement names roman, water names italic in water ink, region names
@@ -113,10 +122,24 @@ the lake is too small for its name at that scale. It is set at the point
 deepest inside the outline rather than at the centroid, which on a lake with
 a bay is out near the shore.
 
-**Symbols:** the three tree species are one family — shared baseline, bole,
-crown construction and proportion — not three unrelated drawings at the
-same size. Which species, whether it's scrub, and when it appears are all
-*decisions* (smooth fields, isolation, blue-noise ordering), never dice.
+**Symbols:** the tree species are one family — shared baseline, bole, crown
+construction and proportion — not four unrelated drawings at the same size.
+Which species, whether it's scrub, and when it appears are all *decisions*
+(smooth fields, isolation, blue-noise ordering), never dice. The ground has the
+last word among them: a wood in dry country comes out as flat-crowned thorn and
+a wood on a glacier comes out conifer, because drawing a Buck oak in Chalced
+says something about the country that isn't true.
+
+The same argument runs one scale up, twice over. **Relief comes in two
+landforms** — mountains and hills — built by one piece of code at two settings:
+a hill is lower *and* near twice as wide for its height *and* domed rather than
+spired *and* smooth where a mountain is broken, and it is inked a rank lighter so
+downland sits behind a range instead of competing with it. All four together are
+what reads as downs; change only the height and you have mountains drawn small,
+which is what a scale bar already does. And **each ground has its own mark** —
+a dune tick, a marsh tuft, an ice crack, a snow drift, a floe on frozen water —
+built to the tree's own grammar: two or three strokes, one nib, the same weight
+as a tree's outline, and no two alike.
 
 **Motion:** the atlas is a reference object and should be still — but
 stillness isn't stiffness. Things gated by continuous zoom (a mountain
@@ -140,7 +163,7 @@ collapses to zero under `prefers-reduced-motion`.
 - **Journeys** — half a dozen curated routes through the books, stepped
   waypoint by waypoint with prose.
 - **Layers** — independent toggles for settlements, names, borders, relief,
-  woodland, rivers, roads, sea lanes, conjectural links. Under them, each
+  woodland, ground, rivers, roads, sea lanes, conjectural links. Under them, each
   thing already gates itself twice by scale: when its mark is drawn, and
   when its name is set.
 - **Reading position** — set once (per book, 16 steps), then invisible —
@@ -240,8 +263,8 @@ current geometry, so you can see whether an edit actually helped. It shares
 its drawing and label-placement code with `Atlas.js` itself, so what you see
 while editing is what the phone will draw.
 
-The geography is organized into eight layers — coast, rivers, ice, relief,
-woods, places, names, lakes — edited one at a time with tools for drawing,
+The geography is organized into nine layers — coast, rivers, ice, relief,
+woods, ground, places, names, lakes — edited one at a time with tools for drawing,
 adding, moving, attaching, detaching and smoothing points. A built-in
 **Still to do** panel walks the whole map looking for things that need
 attention: unnamed rivers, points sitting in open water, duplicate names,
@@ -286,6 +309,20 @@ drawing, so the second gate is held inside the first. The underlying control
 geometry currently carries 60 coast outlines (5,616 control points), 24 rivers, 5 lakes,
 1,620 trees, 15 relief regions and 63 settlements, all traced from the
 published plates.
+
+**New, and empty:** the sheet can now draw **hills** as well as mountains, and
+can draw what the ground is made of — **desert, marsh, ice, snow**, and an
+**unreliably charted** region for country the books describe rather than survey.
+Every consequence of a ground is worked out from where things stand rather than
+flagged by hand: a summit inside snow takes a cap with a wandering snowline, a
+lake inside ice freezes and cracks from the middle, water inside it carries floes
+instead of swell, and the trees change species. Unreliable charting is drawn by
+breaking the shore in runs of its own length, laying a second faint shore beside
+it that does not agree, putting silt in the water where the swell was, and hazing
+the whole with an edgeless fog — nothing moved, nothing hidden, only the sheet
+saying how firmly it is willing to speak. None of it is placed yet: the regions
+themselves are traced in the tracer against the plates and the books, and every
+relief region traced so far is still mountains, which is what it always was.
 
 **Not yet in the world:** the Out Islands and Pirate Isles have no
 coastline yet (structural, not a naming gap — the Out Islands do now at
